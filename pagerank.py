@@ -1,41 +1,54 @@
 import numpy
+from scipy.sparse import *
+
+#readfile and convert to spares matrix
+def get_Matrix_CSC(fname):
+    M=numpy.loadtxt(fname,dtype=int)
+    row=M[:,0]
+    col=M[:,1]
+    data=M[:,2]
+    #convert to SQUARE sparse matrix
+    m,n=row.max(),col.max()
+    row=numpy.r_[row,max(m,n)]
+    col=numpy.r_[col,max(m,n)]
+    data=numpy.r_[data,0]
+    M=coo_matrix((data,(row,col)),dtype=numpy.float64)
+    M=M.tocsc()
+
+    #init 1/Si 
+    s=numpy.array(M.sum(axis=0))
+    for i in range(len(s[0])):
+        if s[0][i]!=0:
+            for j in range(M.indptr[i],M.indptr[i+1]):
+                M.data[j]/=s[0][i]
+    return M
+
 #whether exit iteration
 def check_stability(current,last,threshold):
     diff=current-last
     for val in diff:
-        print(abs(val))
         if abs(val)>threshold:
             return False
     return True
 
-#read M which is already initialized 
+#read M which is already initialized
+
 def pagerank(M,maxn,beta=0.85,threshold=0.001):
+    count=0
     r_last=r=numpy.ones((maxn,1))/maxn
     while True:
-        r=beta*numpy.dot(M,r)+(1-beta)*1/maxn
+        count+=1
+        r=beta*M.dot(r)+(1-beta)*1/maxn
         if(check_stability(r,r_last,threshold)):
             break
         r_last=r
     return r
 
 #main()
-#readfile
-maxn=10
-M=numpy.zeros((maxn,maxn))
-with open('/Users/hanxinlei/tmp/adj_ijk.txt','r') as f:
-    for line in f:
-        if None==line: 
-            continue
-        x=int(line.strip().split()[0])
-        y=int(line.strip().split()[1])        
-        n=int(line.strip().split()[2])
-        M[x][y]=n
-d=numpy.ones((1,maxn))
-d=numpy.dot(d,M)
-#init M
-for i in range(maxn):
-    for j in range(maxn):
-        if(d[0][j]>0):
-            M[i][j]/=d[0][j]
-#rank           
-Rank=pagerank(M,maxn,threshold=0.0001)
+fname='/Users/hanxinlei/Downloads/AdjacencyMatrix.txt'
+#fname='/Users/hanxinlei/tmp/adj_ijk.txt'
+M=get_Matrix_CSC(fname)
+r=pagerank(M,M.shape[0],threshold=1.0e-04)
+numpy.set_printoptions(threshold=numpy.nan)
+print(r)
+
