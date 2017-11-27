@@ -38,17 +38,40 @@ def pagerank(M,maxn,beta=0.85,threshold=0.001):
     r_last=r=numpy.ones((maxn,1))/maxn
     while True:
         count+=1
+        #runtime focus here
         r=beta*M.dot(r)+(1-beta)*1/maxn
         if(check_stability(r,r_last,threshold)):
             break
         r_last=r
-    return r
-
+    return (r,count)
+    
+#
 #main()
+##input your file here E&D
 fname='/Users/hanxinlei/Downloads/AdjacencyMatrix.txt'
+thd=1.0e-04
 #fname='/Users/hanxinlei/tmp/adj_ijk.txt'
 M=get_Matrix_CSC(fname)
-r=pagerank(M,M.shape[0],threshold=1.0e-04)
-numpy.set_printoptions(threshold=numpy.nan)
-print(r)
+result=pagerank(M,M.shape[0],threshold=thd)
+R=result[0]
+iterations=result[1]
+rj=numpy.ones((M.shape[0],1))/M.shape[0]
+
+#output
+M=M.tocoo()
+with open('M.txt','w') as f:
+    for i in range(len(M.row)):
+        string='%d %d %e\n' % (M.row[i],M.col[i],M.data[i])
+        if(M.data[i]!=0):
+            f.write(string)
+with open('rj.txt','w') as f:
+    for i in rj:
+        string='%e\n'%i
+        f.write(string)
+with open('R.txt','w') as f:
+    for i in R:
+        string='%e\n'%i
+        f.write(string)
+with open('count.txt','w') as f:
+    f.write('iterations=%d, threshold=%f'%(iterations,thd))
 
